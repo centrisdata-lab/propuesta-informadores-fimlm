@@ -49,6 +49,10 @@
   .resumen-tabla td:first-child { color: var(--muted); width: 45%; }
   .resumen-tabla .vacio { color: #a3b0c8; font-style: italic; }
   .zona-btn .ob-emoji { font-size: 1.3rem; }
+  .btn-borrar { display: block; margin: 8px auto 0; background: none; border: none; font-family: inherit; font-size: 0.75rem;
+    font-weight: 800; color: var(--muted); text-decoration: underline; cursor: pointer; min-height: 32px; }
+  .btn-borrar:hover { color: var(--blue); }
+  .confirm-meta div span:last-child:not(:first-child) { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
   /* Seis pasos no caben con nombre: solo el paso actual muestra su nombre */
   .stepper .step-item:not(.active) .step-label { display: none; }
   .stepper .step-label { white-space: nowrap; margin-left: 8px; }
@@ -248,22 +252,26 @@ function campoHTML(c) {
   return "";
 }
 
+// Pasos especiales después de los del formulario
+const RESUMEN = PASOS.length, ENVIADO = PASOS.length + 1;
+
 function render(subir = true) {
   const P = PASOS[paso];
-  const fin = paso === PASOS.length;
+  const fin = paso === RESUMEN;
   $("#stepper").innerHTML = [...PASOS, { titulo: "Resumen" }].map((p, i) => `
     <div class="step-item ${i < paso ? "done" : i === paso ? "active" : ""}">
       <div class="step-dot">${i < paso ? "✓" : i + 1}</div><div class="step-label">${esc(p.titulo)}</div>
       ${i < PASOS.length ? `<div class="step-line"><div class="step-line-fill" style="width:${i < paso ? 100 : 0}%"></div></div>` : ""}
     </div>`).join("");
-  $("#form").innerHTML = fin ? resumenHTML() : `
+  $("#form").innerHTML = paso === ENVIADO ? enviadoHTML() : fin ? resumenHTML() : `
     <div class="step-eyebrow">${esc(P.eyebrow)}</div>
     <h2 class="step-title">${esc(P.titulo === "Convocatoria" ? "Convocatoria e inscripción" : P.titulo)}</h2>
     <p class="step-sub">${esc(P.sub)}</p>
     <div class="momento-guia">💡 ${P.guia}</div>
     ${P.campos.map(campoHTML).join("")}`;
-  $("#btn-atras").style.visibility = paso === 0 ? "hidden" : "visible";
-  $("#btn-siguiente").textContent = fin ? "↺ Empezar de nuevo" : paso === PASOS.length - 1 ? "Ver resumen →" : "Siguiente →";
+  $("#btn-atras").style.visibility = paso === 0 || paso === ENVIADO ? "hidden" : "visible";
+  $("#btn-siguiente").textContent = paso === ENVIADO ? "＋ Diligenciar otra iglesia"
+    : fin ? "📤 Enviar respuesta" : paso === PASOS.length - 1 ? "Ver resumen →" : "Siguiente →";
   revisarCifras();
   if (subir) window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -302,9 +310,9 @@ function resumenHTML() {
   return `
     <div class="confirm-wrap" style="padding-top:0">
       <div class="confirm-icon">📋</div>
-      <h2>Resumen de la propuesta</h2>
-      <p>Así quedaría registrada la respuesta de una iglesia. En la versión real se guardaría en el aplicativo
-        y aparecería en una pestaña <b>Informadores</b> del panel, separada de profesores y tutores.</p>
+      <h2>Revisa antes de enviar</h2>
+      <p>Así queda registrada la respuesta de la iglesia. Si algo no está bien, vuelve con <b>← Atrás</b>;
+        si todo está correcto, toca <b>📤 Enviar respuesta</b>.</p>
     </div>
     <div class="confirm-meta">
       <div><span>Efectividad de «Encuentra tu clase» (ingresaron ÷ orientados)</span><b>${ef}</b></div>
@@ -313,6 +321,40 @@ function resumenHTML() {
       <div><span>Novedades pendientes</span><b>${nov.pen}</b></div>
     </div>
     <table class="resumen-tabla">${filas.join("")}</table>`;
+}
+
+// ── Envío simulado ──
+// En la propuesta, "enviar" guarda la respuesta solo en el navegador de quien la diligencia
+// (localStorage); no llega al aplicativo. En la versión oficial se guardará en Firestore.
+const CLAVE = "propuesta-informadores-respuestas";
+function leerEnviadas() {
+  try { return JSON.parse(localStorage.getItem(CLAVE) || "[]"); } catch { return []; }
+}
+function guardarEnvio() {
+  const lista = leerEnviadas();
+  lista.push({ ...state, enviadoEn: new Date().toISOString() });
+  try { localStorage.setItem(CLAVE, JSON.stringify(lista)); } catch { /* navegador sin almacenamiento: se muestra igual la confirmación */ }
+  return lista;
+}
+let enviadas = [];
+
+function enviadoHTML() {
+  const fecha = (iso) => new Date(iso).toLocaleString("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  const icono = (z) => (ZONAS.find(x => x.id === z) || {}).icono || "📍";
+  const ultima = enviadas[enviadas.length - 1] || {};
+  return `
+    <div class="confirm-wrap" style="padding-top:0">
+      <div class="confirm-icon">✅</div>
+      <h2>¡Respuesta enviada!</h2>
+      <p>Gracias. Quedó registrado el seguimiento a los informadores${ultima.iglesia ? ` de <b>${esc(ultima.iglesia)}</b>` : ""}.</p>
+    </div>
+    <div class="confirm-meta">
+      <div><span><b>Respuestas enviadas desde este navegador</b></span><b>${enviadas.length}</b></div>
+      ${enviadas.slice().reverse().slice(0, 8).map(r => `
+        <div><span>${icono(r.zona)} ${esc(r.iglesia || "Iglesia sin nombre")}${r.municipio ? ` · ${esc(r.municipio)}` : ""}</span><span>${fecha(r.enviadoEn)}</span></div>`).join("")}
+    </div>
+    <p style="text-align:center;margin-top:14px;font-size:0.76rem;font-weight:700;color:var(--muted);line-height:1.5">🧪 Propuesta: la respuesta se guardó solo en este navegador; todavía no llega al aplicativo.
+      <button type="button" class="btn-borrar" id="btn-borrar">Borrar respuestas de prueba</button></p>`;
 }
 
 // ── Eventos ──
@@ -340,10 +382,27 @@ $("#form").addEventListener("change", (ev) => {
   const el = ev.target.closest("select[data-id]");
   if (el) state[el.dataset.id] = el.value;
 });
-$("#btn-siguiente").addEventListener("click", () => {
-  if (paso === PASOS.length) { Object.keys(state).forEach(k => delete state[k]); paso = 0; }
-  else paso++;
+$("#btn-siguiente").addEventListener("click", async () => {
+  const btn = $("#btn-siguiente");
+  if (paso === RESUMEN) {
+    // Pequeña espera para que se sienta como un envío real
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Enviando…';
+    await new Promise(r => setTimeout(r, 900));
+    btn.disabled = false;
+    enviadas = guardarEnvio();
+    paso = ENVIADO;
+  } else if (paso === ENVIADO) {
+    Object.keys(state).forEach(k => delete state[k]);
+    paso = 0;
+  } else paso++;
   render();
+});
+$("#form").addEventListener("click", (ev) => {
+  if (ev.target.id !== "btn-borrar") return;
+  try { localStorage.removeItem(CLAVE); } catch {}
+  enviadas = [];
+  render(false);
 });
 $("#btn-atras").addEventListener("click", () => { if (paso > 0) { paso--; render(); } });
 render();
