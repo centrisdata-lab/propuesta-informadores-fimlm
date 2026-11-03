@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Informadores — Campus 2026 (propuesta)</title>
+<meta name="description" content="Propuesta de formulario para el seguimiento a la labor de los informadores: una respuesta por iglesia, en tres momentos."/>
+<!-- Vista previa al compartir (WhatsApp, redes). Las URLs deben ser absolutas y públicas. -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Campus 2026 · Seguimiento pedagógico"/>
+<meta property="og:locale" content="es_CO"/>
+<meta property="og:url" content="https://centrisdata-lab.github.io/propuesta-informadores-fimlm/"/>
+<meta property="og:title" content="Propuesta: seguimiento a la labor de los informadores — Campus 2026"/>
+<meta property="og:description" content="Formulario para revisión: una respuesta por iglesia, en tres momentos (convocatoria, clases y graduación)."/>
+<meta property="og:image" content="https://centrisdata-lab.github.io/propuesta-informadores-fimlm/assets/img/og-informadores.jpg"/>
+<meta property="og:image:secure_url" content="https://centrisdata-lab.github.io/propuesta-informadores-fimlm/assets/img/og-informadores.jpg"/>
+<meta property="og:image:type" content="image/jpeg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://centrisdata-lab.github.io/propuesta-informadores-fimlm/assets/img/og-informadores.jpg"/>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="assets/styles.css"/>
+<style>
+  /* Ajustes propios del prototipo; el resto viene de assets/styles.css */
+  .propuesta { margin-bottom: 22px; }
+  .momento-guia {
+    background: var(--bg); border: 1.5px dashed var(--border); border-radius: 14px; padding: 12px 16px;
+    font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 24px; line-height: 1.5;
+  }
+  .momento-guia b { color: var(--blue); }
+  .bloque-titulo {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: var(--orange-dk);
+    margin: 28px 0 14px; padding-top: 18px; border-top: 1px solid var(--border);
+  }
+  .bloque-titulo:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .num-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .num-grid + .aviso-cifras { margin: -10px 0 22px; }
+  .num-grid .field { margin-bottom: 0; }
+  .num-grid label { min-height: 2.4em; }
+  .aviso-cifras { font-size: 0.78rem; font-weight: 700; color: var(--yellow); background: var(--yellow-bg); border-radius: 10px; padding: 8px 12px; margin-top: 12px; display: none; }
+  .aviso-cifras.visible { display: block; }
+  .opcional { font-weight: 700; color: var(--muted); font-size: 0.72rem; margin-left: 4px; }
+  .resumen-tabla { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-top: 10px; }
+  .resumen-tabla th { text-align: left; background: var(--bg); color: var(--blue); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; }
+  .resumen-tabla td { padding: 9px 12px; border-bottom: 1px solid #eef2f8; vertical-align: top; font-weight: 600; }
+  .resumen-tabla td:first-child { color: var(--muted); width: 45%; }
+  .resumen-tabla .vacio { color: #a3b0c8; font-style: italic; }
+  .zona-btn .ob-emoji { font-size: 1.3rem; }
+  /* Seis pasos no caben con nombre: solo el paso actual muestra su nombre */
+  .stepper .step-item:not(.active) .step-label { display: none; }
+  .stepper .step-label { white-space: nowrap; margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<header>
+  <div class="header-inner">
+    <div class="header-logo"><img src="assets/img/logo-campus.png" alt="Logo Campus"></div>
+    <div class="header-text">
+      <div class="supertitle">Gestión Campus 2026</div>
+      <h1>Seguimiento a la labor de los informadores</h1>
+      <p>Lo diligencia la persona encargada de los informadores de cada iglesia</p>
+    </div>
+  </div>
+</header>
+
+<main class="narrow">
+  <div class="banner banner-info propuesta">
+    <span class="banner-icon">🧪</span>
+    <span><b>Propuesta para revisión.</b> Este formulario todavía no guarda respuestas: sirve para revisar las preguntas
+      con la coordinación de tutores antes de activarlo en el aplicativo.</span>
+  </div>
+
+  <div class="panel">
+    <div class="stepper" id="stepper"></div>
+    <form id="form" novalidate></form>
+    <div class="form-nav">
+      <button type="button" class="btn btn-ghost btn-lg" id="btn-atras">← Atrás</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-primary btn-lg" id="btn-siguiente">Siguiente →</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Zonas y departamentos (CONTEXTO_DATOS.md / data/zonas.json) ──
+const ZONAS = [
+  { id: "Bogotá & Cundinamarca", icono: "🏙️", deptos: ["Bogotá", "Cundinamarca"] },
+  { id: "Zona Caribe", icono: "🌊", deptos: ["Atlántico", "La Guajira", "Córdoba", "Sucre", "San Andrés", "Bolívar", "Magdalena"] },
+  { id: "Antioquia & Eje Cafetero", icono: "☕", deptos: ["Antioquia", "Urabá", "Caldas", "Risaralda", "Quindío"] },
+  { id: "Zona Pacífico", icono: "🌿", deptos: ["Valle del Cauca", "Cauca", "Chocó", "Nariño", "Putumayo"] },
+  { id: "Zona Sur & Llanos", icono: "🌾", deptos: ["Meta", "Arauca", "Casanare", "Guainía", "Guaviare", "Vaupés", "Vichada", "Amazonas", "Caquetá", "Huila", "Tolima"] },
+  { id: "Santanderes, Boyacá y Cesar", icono: "⛰️", deptos: ["Santander", "Norte de Santander", "Boyacá", "Cesar"] },
+];
+
+// Bloque de novedades: se repite en los tres momentos (pedido de la coordinación de tutores)
+const novedades = (m) => ({ tipo: "novedades", id: m });
+
+// ── Definición del formulario ──
+// tipo: opciones (una), multiple (varias), numero, texto, area, select, zona, novedades
+const PASOS = [
+  {
+    titulo: "La iglesia", eyebrow: "Paso 1 · Datos de la iglesia",
+    sub: "Una respuesta por iglesia. La responde la persona encargada de los informadores de esa iglesia.",
+    guia: "Permite dejar la <b>trazabilidad</b> que pidió la coordinación: en qué iglesias de cada departamento hubo informadores este año.",
+    campos: [
+      { id: "zona", tipo: "zona", label: "Zona" },
+      { id: "departamento", tipo: "select", label: "Departamento o región", depende: "zona" },
+      { id: "municipio", tipo: "texto", label: "Municipio", ph: "Ej: San Pedro de Urabá" },
+      { id: "iglesia", tipo: "texto", label: "Iglesia o sede", ph: "Nombre o dirección de la iglesia" },
+      { id: "responsable", tipo: "texto", label: "Nombre de quien diligencia", ph: "Encargado(a) de los informadores de la iglesia" },
+      { grupo: "Informadores de la iglesia", campos: [
+        { id: "informadoresActivos", tipo: "numero", label: "Informadores activos en la iglesia" },
+        { id: "informadoresCurso", tipo: "numero", label: "¿Cuántos hicieron el curso de informadores?" },
+        { id: "gruposReunion", tipo: "numero", label: "Grupos de reunión que acompañan", opcional: true },
+      ]},
+    ],
+  },
+  {
+    titulo: "Convocatoria", eyebrow: "Paso 2 · Momento 1",
+    sub: "Convocatoria e inscripción: promover la participación y apoyar el proceso de inscripción.",
+    guia: "<b>Alcance:</b> ¿a cuántos llegamos? · <b>Impacto:</b> ¿cuántos se inscribieron? · <b>Mejora:</b> ¿qué dificultades tuvimos?",
+    campos: [
+      { grupo: "Alcance", campos: [
+        { id: "conv_orientadas", tipo: "numero", label: "Personas convocadas u orientadas sobre la oferta" },
+        { id: "conv_inscritas", tipo: "numero", label: "Personas que se inscribieron con apoyo del informador" },
+      ]},
+      { id: "conv_medios", tipo: "multiple", label: "¿Cómo se convocó? (puede marcar varias)", opciones: [
+        ["📢", "Anuncio en la reunión"], ["💬", "WhatsApp"], ["🗣️", "Voz a voz"], ["🖼️", "Piezas gráficas o afiches"],
+        ["📝", "Mesa de inscripción presencial"], ["📞", "Llamadas"]] },
+      { id: "conv_dificultades", tipo: "multiple", label: "Dificultades durante la inscripción (puede marcar varias)", opciones: [
+        ["📧", "No tenían correo o lo olvidaron"], ["📱", "Poco manejo del celular o computador"], ["📶", "Conectividad"],
+        ["🕘", "Horarios de los cursos"], ["🚫", "Cupos llenos o curso no disponible"], ["✅", "No hubo dificultades"]] },
+      novedades("conv"),
+    ],
+  },
+  {
+    titulo: "Durante las clases", eyebrow: "Paso 3 · Momento 2",
+    sub: "Acompañamiento durante las actividades académicas: facilitar el acceso a las clases y apoyar la gestión de novedades.",
+    guia: "Incluye la estrategia <b>«Encuentra tu clase»</b> (estudiantes orientados, cuántos lograron ingresar y si quedó el acceso directo en el celular) y la <b>recepción y gestión de novedades</b>.",
+    campos: [
+      { id: "etc_uso", tipo: "opciones", label: "¿Se usó la estrategia «Encuentra tu clase»?", opciones: [
+        ["✅", "Sí", "yes"], ["🔶", "Parcialmente", "partial"], ["❌", "No", "no"]] },
+      { grupo: "Encuentra tu clase", campos: [
+        { id: "etc_orientados", tipo: "numero", label: "Estudiantes orientados con «Encuentra tu clase»" },
+        { id: "etc_ingresaron", tipo: "numero", label: "Estudiantes que lograron ingresar a su clase" },
+      ], aviso: "etc" },
+      { id: "etc_acceso", tipo: "opciones", label: "¿Se dejó el acceso directo de «Encuentra tu clase» en el celular de los estudiantes?", opciones: [
+        ["📲", "A la mayoría", "yes"], ["🔶", "A algunos", "partial"], ["❌", "A ninguno", "no"], ["❔", "No sabe", "other"]] },
+      { id: "etc_utilidad", tipo: "opciones", label: "¿Qué tan útil fue la estrategia para los estudiantes?", opciones: [
+        ["🌟", "Muy útil", "yes"], ["👍", "Útil", "partial"], ["👎", "Poco útil", "no"]] },
+      { id: "etc_dificultades", tipo: "multiple", label: "Dificultades de acceso más frecuentes (puede marcar varias)", opciones: [
+        ["🔑", "No recordaban usuario o clave"], ["🔗", "No encontraban el enlace de la clase"], ["📧", "No les llegó el correo con el enlace"],
+        ["📱", "Celular sin espacio o sin datos"], ["👵", "Poco manejo de la tecnología"], ["✅", "No hubo dificultades"]] },
+      novedades("clases"),
+      { id: "clases_tipos", tipo: "multiple", label: "¿Sobre qué fueron las novedades? (puede marcar varias)", opcional: true, opciones: [
+        ["🚪", "Acceso a la clase"], ["🔄", "Cambio de horario o grupo"], ["🏃", "Retiro del curso"], ["📝", "Tareas y valoraciones"],
+        ["⚙️", "Problemas técnicos"], ["💬", "Otra"]] },
+    ],
+  },
+  {
+    titulo: "Cierre y graduación", eyebrow: "Paso 4 · Momento 3",
+    sub: "Cierre de actividades académicas y graduación: acompañar el cierre del proceso formativo y apoyar la graduación.",
+    guia: "<b>Alcance:</b> ¿a cuántas personas se orientó sobre el cierre? · <b>Resultados:</b> ¿qué lograron? · <b>Gestión:</b> novedades atendidas y pendientes.",
+    campos: [
+      { grupo: "Alcance y resultados", campos: [
+        { id: "cierre_orientados", tipo: "numero", label: "Estudiantes orientados sobre las actividades de cierre" },
+        { id: "cierre_culminaron", tipo: "numero", label: "Estudiantes de la iglesia que culminaron o se graduaron", opcional: true },
+      ]},
+      { id: "cierre_apoyo", tipo: "multiple", label: "¿Qué apoyo se brindó para la graduación? (puede marcar varias)", opciones: [
+        ["📅", "Informar fecha y lugar"], ["☎️", "Confirmar asistencia"], ["🎓", "Apoyo logístico el día de la ceremonia"],
+        ["📜", "Entrega o información de certificados"], ["➖", "Ninguno"]] },
+      novedades("cierre"),
+    ],
+  },
+  {
+    titulo: "Balance", eyebrow: "Paso 5 · Balance del periodo",
+    sub: "¿Qué funcionó, qué se debe fortalecer y qué necesitan los informadores?",
+    guia: "<b>Mejora:</b> estrategias que dieron mejores resultados, dificultades que se repitieron y apoyos que necesitan los informadores.",
+    campos: [
+      { id: "logros", tipo: "area", label: "Principales logros y estrategias que funcionaron", ph: "Ej: la mesa de inscripción después de la reunión dominical…" },
+      { id: "fortalecer", tipo: "area", label: "¿Qué se debe fortalecer?", ph: "Dificultades que se repitieron, barreras de contacto…" },
+      { id: "apoyos", tipo: "multiple", label: "¿Qué apoyos o recursos necesitan los informadores? (puede marcar varias)", opciones: [
+        ["🎓", "Capacitación"], ["🖼️", "Piezas gráficas"], ["📋", "Listados de estudiantes de la iglesia"],
+        ["🤝", "Contacto directo con tutores"], ["💻", "Equipos o conectividad"], ["➖", "Ninguno"]] },
+      { id: "continuar", tipo: "opciones", label: "¿La iglesia quiere continuar con informadores en 2027?", opciones: [
+        ["✅", "Sí", "yes"], ["❔", "Aún no se sabe", "other"], ["❌", "No", "no"]] },
+    ],
+  },
+];
+const NOV = [
+  ["recibidas", "Novedades recibidas"],
+  ["resueltas", "Resueltas por el informador"],
+  ["remitidas", "Remitidas a tutor o administrador"],
+  ["respuesta", "Remitidas que tuvieron respuesta"],
+  ["pendientes", "Pendientes"],
+];
+
+const state = {};
+let paso = 0;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function campoHTML(c) {
+  const op = c.opcional ? '<span class="opcional">(opcional)</span>' : "";
+  if (c.grupo) {
+    return `<div class="bloque-titulo">${esc(c.grupo)}</div><div class="num-grid">${c.campos.map(campoHTML).join("")}</div>`
+      + (c.aviso ? `<div class="aviso-cifras" id="aviso-${c.aviso}"></div>` : "");
+  }
+  if (c.tipo === "novedades") {
+    return `<div class="bloque-titulo">Recepción y gestión de novedades</div>
+      <div class="num-grid">${NOV.map(([k, l]) => campoHTML({ id: `${c.id}_nov_${k}`, tipo: "numero", label: l })).join("")}</div>
+      <div class="aviso-cifras" id="aviso-${c.id}"></div>`;
+  }
+  const lab = `<label for="in-${c.id}">${esc(c.label)}${op}</label>`;
+  switch (c.tipo) {
+    case "numero":
+      return `<div class="field">${lab}<input class="text-input" id="in-${c.id}" data-id="${c.id}" type="number" min="0" inputmode="numeric" placeholder="0" value="${esc(state[c.id])}"/></div>`;
+    case "texto":
+      return `<div class="field">${lab}<input class="text-input" id="in-${c.id}" data-id="${c.id}" type="text" placeholder="${esc(c.ph || "")}" value="${esc(state[c.id])}"/></div>`;
+    case "area":
+      return `<div class="field">${lab}<textarea class="text-input" id="in-${c.id}" data-id="${c.id}" placeholder="${esc(c.ph || "")}">${esc(state[c.id])}</textarea></div>`;
+    case "select": {
+      const z = ZONAS.find(z => z.id === state[c.depende]);
+      const ops = z ? z.deptos : [];
+      return `<div class="field">${lab}<select class="select-input" id="in-${c.id}" data-id="${c.id}" ${z ? "" : "disabled"}>
+        <option value="">${z ? "Selecciona…" : "Primero elige la zona"}</option>
+        ${ops.map(o => `<option${o === state[c.id] ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div>`;
+    }
+    case "zona":
+      return `<div class="field"><label>${esc(c.label)}</label><div class="option-row">${ZONAS.map(z =>
+        `<button type="button" class="option-btn ob-chip zona-btn${state.zona === z.id ? " selected" : ""}" data-set="zona" data-value="${esc(z.id)}">
+          <span class="ob-emoji">${z.icono}</span> <span class="ob-label">${esc(z.id)}</span></button>`).join("")}</div></div>`;
+    case "opciones":
+      return `<div class="field"><label>${esc(c.label)}${op}</label><div class="option-row">${c.opciones.map(([e, v, k]) =>
+        `<button type="button" class="option-btn ob-${k}${state[c.id] === v ? " selected" : ""}" data-set="${c.id}" data-value="${esc(v)}">
+          <span class="ob-emoji">${e}</span> <span class="ob-label">${esc(v)}</span></button>`).join("")}</div></div>`;
+    case "multiple": {
+      const sel = state[c.id] || [];
+      return `<div class="field"><label>${esc(c.label)}${op}</label><div class="option-row">${c.opciones.map(([e, v]) =>
+        `<button type="button" class="option-btn ob-chip${sel.includes(v) ? " selected" : ""}" data-toggle="${c.id}" data-value="${esc(v)}">
+          <span class="ob-emoji">${e}</span> <span class="ob-label">${esc(v)}</span></button>`).join("")}</div></div>`;
+    }
+  }
+  return "";
+}
+
+function render(subir = true) {
+  const P = PASOS[paso];
+  const fin = paso === PASOS.length;
+  $("#stepper").innerHTML = [...PASOS, { titulo: "Resumen" }].map((p, i) => `
+    <div class="step-item ${i < paso ? "done" : i === paso ? "active" : ""}">
+      <div class="step-dot">${i < paso ? "✓" : i + 1}</div><div class="step-label">${esc(p.titulo)}</div>
+      ${i < PASOS.length ? `<div class="step-line"><div class="step-line-fill" style="width:${i < paso ? 100 : 0}%"></div></div>` : ""}
+    </div>`).join("");
+  $("#form").innerHTML = fin ? resumenHTML() : `
+    <div class="step-eyebrow">${esc(P.eyebrow)}</div>
+    <h2 class="step-title">${esc(P.titulo === "Convocatoria" ? "Convocatoria e inscripción" : P.titulo)}</h2>
+    <p class="step-sub">${esc(P.sub)}</p>
+    <div class="momento-guia">💡 ${P.guia}</div>
+    ${P.campos.map(campoHTML).join("")}`;
+  $("#btn-atras").style.visibility = paso === 0 ? "hidden" : "visible";
+  $("#btn-siguiente").textContent = fin ? "↺ Empezar de nuevo" : paso === PASOS.length - 1 ? "Ver resumen →" : "Siguiente →";
+  revisarCifras();
+  if (subir) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Avisos de coherencia (no bloquean: es una propuesta)
+function revisarCifras() {
+  const n = (k) => Number(state[k] || 0);
+  const aviso = (id, msgs) => { const el = $("#aviso-" + id); if (!el) return; el.innerHTML = msgs.join("<br>"); el.classList.toggle("visible", msgs.length > 0); };
+  ["conv", "clases", "cierre"].forEach(m => {
+    const k = (x) => n(`${m}_nov_${x}`), msgs = [];
+    if (k("resueltas") + k("remitidas") > k("recibidas")) msgs.push("⚠️ Resueltas + remitidas no debería superar las novedades recibidas.");
+    if (k("respuesta") > k("remitidas")) msgs.push("⚠️ Las remitidas con respuesta no pueden superar las remitidas.");
+    aviso(m, msgs);
+  });
+  aviso("etc", n("etc_ingresaron") > n("etc_orientados") && n("etc_orientados") > 0
+    ? ["⚠️ Los estudiantes que ingresaron no deberían superar a los orientados."] : []);
+}
+
+function resumenHTML() {
+  const filas = [];
+  const vacio = '<span class="vacio">Sin responder</span>';
+  PASOS.forEach(P => {
+    filas.push(`<tr><th colspan="2">${esc(P.titulo)}</th></tr>`);
+    const add = (c) => {
+      if (c.grupo) return c.campos.forEach(add);
+      if (c.tipo === "novedades") return NOV.forEach(([k, l]) => add({ id: `${c.id}_nov_${k}`, label: `Novedades · ${l}` }));
+      const v = state[c.id];
+      const txt = Array.isArray(v) ? (v.length ? v.join(", ") : "") : (v ?? "");
+      filas.push(`<tr><td>${esc(c.label)}</td><td>${txt === "" ? vacio : esc(txt)}</td></tr>`);
+    };
+    P.campos.forEach(add);
+  });
+  const n = (k) => Number(state[k] || 0);
+  const ef = n("etc_orientados") ? Math.round(n("etc_ingresaron") * 100 / n("etc_orientados")) + " %" : "—";
+  const nov = ["conv", "clases", "cierre"].reduce((a, m) => ({ rec: a.rec + n(`${m}_nov_recibidas`), rem: a.rem + n(`${m}_nov_remitidas`), resp: a.resp + n(`${m}_nov_respuesta`), pen: a.pen + n(`${m}_nov_pendientes`) }), { rec: 0, rem: 0, resp: 0, pen: 0 });
+  return `
+    <div class="confirm-wrap" style="padding-top:0">
+      <div class="confirm-icon">📋</div>
+      <h2>Resumen de la propuesta</h2>
+      <p>Así quedaría registrada la respuesta de una iglesia. En la versión real se guardaría en el aplicativo
+        y aparecería en una pestaña <b>Informadores</b> del panel, separada de profesores y tutores.</p>
+    </div>
+    <div class="confirm-meta">
+      <div><span>Efectividad de «Encuentra tu clase» (ingresaron ÷ orientados)</span><b>${ef}</b></div>
+      <div><span>Novedades recibidas en los tres momentos</span><b>${nov.rec}</b></div>
+      <div><span>Remitidas que tuvieron respuesta</span><b>${nov.resp} de ${nov.rem}</b></div>
+      <div><span>Novedades pendientes</span><b>${nov.pen}</b></div>
+    </div>
+    <table class="resumen-tabla">${filas.join("")}</table>`;
+}
+
+// ── Eventos ──
+$("#form").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-set], button[data-toggle]");
+  if (!b) return;
+  if (b.dataset.set) {
+    state[b.dataset.set] = b.dataset.value;
+    if (b.dataset.set === "zona") delete state.departamento;
+  } else {
+    const id = b.dataset.toggle, v = b.dataset.value, arr = state[id] || [];
+    const excluyentes = ["No hubo dificultades", "Ninguno"];
+    state[id] = arr.includes(v) ? arr.filter(x => x !== v)
+      : excluyentes.includes(v) ? [v] : [...arr.filter(x => !excluyentes.includes(x)), v];
+  }
+  render(false);
+});
+$("#form").addEventListener("input", (ev) => {
+  const el = ev.target.closest("[data-id]");
+  if (!el) return;
+  state[el.dataset.id] = el.value;
+  revisarCifras();
+});
+$("#form").addEventListener("change", (ev) => {
+  const el = ev.target.closest("select[data-id]");
+  if (el) state[el.dataset.id] = el.value;
+});
+$("#btn-siguiente").addEventListener("click", () => {
+  if (paso === PASOS.length) { Object.keys(state).forEach(k => delete state[k]); paso = 0; }
+  else paso++;
+  render();
+});
+$("#btn-atras").addEventListener("click", () => { if (paso > 0) { paso--; render(); } });
+render();
+</script>
+</body>
+</html>
